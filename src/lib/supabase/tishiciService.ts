@@ -23,7 +23,7 @@ interface SupabaseTishici {
 }
 
 // 转换Supabase提示词到本地提示词格式
-const convertToLocalPrompt = async (tishici: SupabaseTishici, keepDecrypted: boolean = false): Promise<Prompt> => {
+export const convertToLocalPrompt = async (tishici: SupabaseTishici, keepDecrypted: boolean = false): Promise<Prompt> => {
   const user = await getCurrentUser();
   if (!user) throw new Error('用户未登录');
 

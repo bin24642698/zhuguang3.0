@@ -49,7 +49,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      // 验证邮箱域名
+      // 验证邮箱格式
       const emailError = validateEmailDomain(email);
       if (emailError) {
         setError(emailError);
@@ -78,14 +78,21 @@ export default function LoginPage() {
         }
 
         // 注册用户
-        await signUp(email, password, trimmedDisplayName);
+        const result = await signUp(email, password, trimmedDisplayName);
 
-        // 注册成功，切换到登录模式
-        setIsLogin(true);
-        setEmail('');
-        setPassword('');
-        setDisplayName('');
-        setError('注册成功，请登录');
+        // 检查是否需要邮箱确认
+        if (result && result.needsEmailConfirmation) {
+          // 注册成功，但需要邮箱确认
+          setIsLogin(true);
+          setEmail('');
+          setPassword('');
+          setDisplayName('');
+          setError('注册成功！请查收验证邮件，验证邮箱后再登录。');
+          return;
+        }
+
+        // 如果不需要邮箱确认（已经自动登录），跳转到首页
+        router.push('/');
       }
     } catch (error) {
       console.error('认证失败:', error);

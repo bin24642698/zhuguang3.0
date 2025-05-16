@@ -13,6 +13,7 @@ import {
   deletePromptFromSupabase,
   getUserPromptSelectionsFromSupabase
 } from '@/lib/supabase/tishiciAdapter'; // 使用tishiciAdapter替代promptService
+import { supabase } from '@/lib/supabase';
 import { encryptPrompt, decryptPrompt, decryptPrompts } from '@/lib/promptEncryptionManager';
 import { useAuthStore } from '@/store/slices/authStore';
 
@@ -422,14 +423,14 @@ export const getAIInterfacePromptsByType = async (type: Prompt['type'], decryptC
 
       // 合并用户自己的提示词和用户选择的提示词
       const allPrompts = [...userPrompts, ...selectedPrompts];
-      
+
       // 确保所有提示词都是请求的类型 - 修复类型混淆的BUG
       const filteredOutPrompts = allPrompts.filter(prompt => prompt.type !== type);
       if (filteredOutPrompts.length > 0) {
         console.debug(`过滤掉了 ${filteredOutPrompts.length} 个不匹配类型的提示词，请求类型: ${type}`);
       }
       const typeFilteredPrompts = allPrompts.filter(prompt => prompt.type === type);
-      
+
       // 去重
       const uniquePrompts = typeFilteredPrompts.filter((prompt, index, self) =>
         index === self.findIndex(p => p.id === prompt.id)
@@ -490,6 +491,65 @@ export const getPublicPrompts = async (type?: Prompt['type'], decryptContents: b
   }
 
   // 使用本地存储 - 本地存储不支持公开提示词
+  return [];
+};
+
+/**
+ * 获取其他用户创建的提示词
+ * @param type 提示词类型（可选）
+ * @param decryptContents 是否解密内容
+ * @returns 其他用户创建的提示词
+ */
+export const getUserCreatedPrompts = async (type?: Prompt['type'], decryptContents: boolean = false): Promise<Prompt[]> => {
+  // 如果使用Supabase
+  if (await useSupabase()) {
+    try {
+      // 获取当前用户
+      const user = await useAuthStore.getState().getCurrentUser();
+      if (!user) return [];
+
+      // 构建查询
+      let query = supabase
+        .from('tishici')
+        .select('*')
+        .neq('user_id', user.id) // 排除当前用户的提示词
+        .eq('is_public', true) // 只获取公开的提示词
+        .order('updated_at', { ascending: false });
+
+      // 如果指定了类型，则按类型过滤
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      // 转换为本地提示词格式
+      const prompts = [];
+      for (const item of data) {
+        try {
+          // 导入 convertToLocalPrompt 函数
+          const { convertToLocalPrompt } = await import('@/lib/supabase/tishiciService');
+          const prompt = await convertToLocalPrompt(item, false);
+          prompts.push(prompt);
+        } catch (error) {
+          console.error('转换提示词失败:', error);
+        }
+      }
+
+      // 如果需要解密内容
+      if (decryptContents) {
+        return await decryptPrompts(prompts);
+      }
+
+      return prompts;
+    } catch (error) {
+      console.error(`Supabase获取其他用户创建的提示词失败:`, error);
+    }
+  }
+
+  // 使用本地存储 - 本地存储不支持获取其他用户的提示词
   return [];
 };
 

@@ -22,7 +22,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
-  const [registeredUser, setRegisteredUser] = useState<{ id: string; name: string } | null>(null);
+  const [registeredUser, setRegisteredUser] = useState<{ id: string; name: string; needsEmailConfirmation?: boolean } | null>(null);
 
   const { signIn, signUp } = useAuth();
 
@@ -38,7 +38,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setRegisteredUser(null);
 
     try {
-      // 验证邮箱域名
+      // 验证邮箱格式
       const emailError = validateEmailDomain(email);
       if (emailError) {
         setError(emailError);
@@ -63,15 +63,24 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         // 确保结果和用户对象存在
         if (result && result.user) {
           const { user } = result;
-          setRegistrationSuccess(true);
-          setRegisteredUser({
-            id: user.id,
-            name: user.user_metadata?.display_name || user.user_metadata?.name || userId
-          });
-          // 清空表单
-          setEmail('');
-          setPassword('');
-          setUserId('');
+
+          // 检查是否需要邮箱确认
+          if (result.needsEmailConfirmation) {
+            // 注册成功，但需要邮箱确认
+            setRegistrationSuccess(true);
+            setRegisteredUser({
+              id: user.id,
+              name: user.user_metadata?.display_name || user.user_metadata?.name || userId,
+              needsEmailConfirmation: true
+            });
+            // 清空表单
+            setEmail('');
+            setPassword('');
+            setUserId('');
+          } else {
+            // 不需要邮箱确认（已经自动登录），关闭弹窗
+            onClose();
+          }
         } else {
           // 注册成功但没有返回用户信息，关闭弹窗
           onClose();
@@ -114,12 +123,27 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
           {registrationSuccess && registeredUser && (
             <div className="bg-green-50 text-green-600 p-4 rounded-lg mb-4">
               <h3 className="font-medium mb-2">注册成功！</h3>
-              <p className="text-sm mb-1">您的用户信息如下：</p>
-              <div className="bg-white bg-opacity-70 p-3 rounded-md text-text-dark text-sm">
-                <p className="mb-1"><span className="font-medium">用户ID（显示名称）：</span>{registeredUser.name}</p>
-                <p><span className="font-medium">UID：</span>{registeredUser.id}</p>
-              </div>
-              <p className="text-xs mt-3">请记住您的UID，这是您在系统中的唯一标识。</p>
+              {registeredUser.needsEmailConfirmation ? (
+                <>
+                  <p className="text-sm mb-3">我们已向您的邮箱发送了一封验证邮件，请查收并点击邮件中的链接完成验证。</p>
+                  <p className="text-sm mb-1">您的用户信息如下：</p>
+                  <div className="bg-white bg-opacity-70 p-3 rounded-md text-text-dark text-sm">
+                    <p className="mb-1"><span className="font-medium">用户ID（显示名称）：</span>{registeredUser.name}</p>
+                    <p><span className="font-medium">UID：</span>{registeredUser.id}</p>
+                  </div>
+                  <p className="text-xs mt-3">请记住您的UID，这是您在系统中的唯一标识。</p>
+                  <p className="text-xs mt-2 text-amber-600">注意：您需要验证邮箱后才能登录系统。</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm mb-1">您的用户信息如下：</p>
+                  <div className="bg-white bg-opacity-70 p-3 rounded-md text-text-dark text-sm">
+                    <p className="mb-1"><span className="font-medium">用户ID（显示名称）：</span>{registeredUser.name}</p>
+                    <p><span className="font-medium">UID：</span>{registeredUser.id}</p>
+                  </div>
+                  <p className="text-xs mt-3">请记住您的UID，这是您在系统中的唯一标识。</p>
+                </>
+              )}
               <div className="mt-4 flex justify-center">
                 <button
                   type="button"

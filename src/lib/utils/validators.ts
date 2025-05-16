@@ -64,7 +64,7 @@ export const validateApiKey = (apiKey: string): string | null => {
 };
 
 /**
- * 验证邮箱域名
+ * 验证邮箱格式和域名
  * @param email 邮箱
  * @returns 错误信息或null
  */
@@ -79,12 +79,11 @@ export const validateEmailDomain = (email: string): string | null => {
     return '邮箱格式不正确';
   }
 
-  // 验证域名是否在允许列表中
+  // 域名验证
   const allowedDomains = ['qq.com', '163.com', 'gmail.com'];
-  const domain = email.split('@')[1].toLowerCase();
-
-  if (!allowedDomains.includes(domain)) {
-    return `邮箱域名不被支持，请使用 @qq.com、@163.com 或 @gmail.com 的邮箱`;
+  const emailDomain = email.split('@')[1]?.toLowerCase();
+  if (!emailDomain || !allowedDomains.includes(emailDomain)) {
+    return '只支持 @qq.com、@163.com 和 @gmail.com 邮箱注册';
   }
 
   return null;

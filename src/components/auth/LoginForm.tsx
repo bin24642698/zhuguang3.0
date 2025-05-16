@@ -45,7 +45,7 @@ export default function LoginForm() {
     setIsLoading(true);
 
     try {
-      // 验证邮箱域名
+      // 验证邮箱格式
       const emailError = validateEmailDomain(email);
       if (emailError) {
         setError(emailError);
@@ -56,6 +56,8 @@ export default function LoginForm() {
       if (isLogin) {
         // 登录
         await signIn(email, password);
+        // 登录成功，跳转到首页
+        router.push('/');
       } else {
         // 注册
         const trimmedDisplayName = displayName.trim();
@@ -74,14 +76,26 @@ export default function LoginForm() {
 
         // 添加更安全的错误处理
         const result = await signUp(email, password, trimmedDisplayName);
+
         // 确保结果存在
         if (!result || !result.user) {
           throw new Error('注册失败，请稍后重试');
         }
-      }
 
-      // 登录/注册成功，跳转到首页
-      router.push('/');
+        // 检查是否需要邮箱确认
+        if (result.needsEmailConfirmation) {
+          // 注册成功，但需要邮箱确认
+          setIsLogin(true); // 切换到登录模式
+          setEmail('');
+          setPassword('');
+          setDisplayName('');
+          setError('注册成功！请查收验证邮件，验证邮箱后再登录。');
+          return;
+        }
+
+        // 如果不需要邮箱确认（已经自动登录），跳转到首页
+        router.push('/');
+      }
     } catch (error) {
       console.error('认证失败:', error);
       setError(error instanceof Error ? error.message : '认证失败，请重试');

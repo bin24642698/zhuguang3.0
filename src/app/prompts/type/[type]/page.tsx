@@ -410,10 +410,10 @@ export default function PromptTypePage() {
           }
         />
 
-      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
-        <div className="max-w-full mx-auto px-0 sm:px-4 lg:container lg:mx-auto">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+        <div className="max-w-full mx-auto px-0 sm:px-4 lg:container lg:mx-auto flex flex-col flex-1">
           {/* 提示词列表 */}
-          <div className="mb-6">
+          <div className="flex-shrink-0 mb-6">
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md mr-4 ${
@@ -478,8 +478,8 @@ export default function PromptTypePage() {
             </div>
           </div>
           {/* 提示词内容区域 */}
-          <div className="mb-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full">
               {isLoading ? (
                 // 加载状态
                 <div className="col-span-full flex justify-center p-12">
@@ -573,7 +573,7 @@ export default function PromptTypePage() {
                   </>
                 ) : (
                   // 无公开提示词提示
-                  <div className="col-span-full ghibli-card p-12 flex flex-col items-center justify-center">
+                  <div className="col-span-full ghibli-card p-12 flex flex-col items-center justify-center h-full">
                     <div className="w-24 h-24 bg-[rgba(120,180,140,0.1)] rounded-full flex items-center justify-center mb-4 text-text-light">
                       <span className="material-icons text-4xl">search_off</span>
                     </div>
@@ -672,7 +672,7 @@ export default function PromptTypePage() {
                   </>
                 ) : (
                   // 无用户提示词提示
-                  <div className="col-span-full ghibli-card p-12 flex flex-col items-center justify-center">
+                  <div className="col-span-full ghibli-card p-12 flex flex-col items-center justify-center h-full">
                     <div className="w-24 h-24 bg-[rgba(120,180,140,0.1)] rounded-full flex items-center justify-center mb-4 text-text-light">
                       <span className="material-icons text-4xl">search_off</span>
                     </div>

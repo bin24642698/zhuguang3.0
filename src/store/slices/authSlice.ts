@@ -13,7 +13,7 @@ interface AuthStore extends AuthState {
   signIn: (email: string, password: string) => Promise<void>;
 
   // 用户注册
-  signUp: (email: string, password: string, userId: string) => Promise<void>;
+  signUp: (email: string, password: string, userId: string) => Promise<{ user: User | null; session: Session | null; needsEmailConfirmation?: boolean }>;
 
   // 用户登出
   signOut: () => Promise<void>;
@@ -91,10 +91,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   signUp: async (email: string, password: string, userId: string) => {
     try {
       set({ isLoading: true, error: null });
-      await supabaseSignUp(email, password, userId);
+      const result = await supabaseSignUp(email, password, userId);
       // 不直接设置user和session，依赖onAuthStateChange事件
       // 但仍然设置isLoading为false，表示注册操作已完成
       set({ isLoading: false });
+      return result;
     } catch (error) {
       console.error('注册失败:', error);
       set({

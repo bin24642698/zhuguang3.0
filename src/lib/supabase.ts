@@ -51,43 +51,45 @@ export const signIn = async (email: string, password: string) => {
  */
 export const signUp = async (email: string, password: string, userId: string) => {
   try {
-    // 注册用户
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name: userId,
-          display_name: userId, // 添加 display_name 字段
-        }
-      }
+    // 调用后端注册API
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        userId,
+      }),
     });
 
-    if (error) throw error;
-
-    // 如果注册成功但用户元数据中没有正确设置名称，尝试更新用户资料
-    if (data.user && (!data.user.user_metadata?.name || !data.user.user_metadata?.display_name)) {
-      console.log('尝试更新用户资料...');
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: {
-          name: userId,
-          display_name: userId,
-        }
-      });
-
-      if (updateError) {
-        console.error('更新用户资料失败:', updateError);
-      } else {
-        console.log('用户资料更新成功');
-        // 重新获取更新后的用户信息
-        const { data: userData } = await supabase.auth.getUser();
-        if (userData && userData.user) {
-          return { user: userData.user, session: data.session };
-        }
+    // 检查响应状态
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('注册API错误响应:', response.status, errorText);
+      try {
+        // 尝试解析错误响应为JSON
+        const errorJson = JSON.parse(errorText);
+        throw new Error(errorJson.message || '注册失败');
+      } catch (e) {
+        // 如果无法解析为JSON，则使用原始错误文本
+        throw new Error(`注册失败: ${response.status} ${errorText.substring(0, 100)}`);
       }
     }
 
-    return { user: data.user, session: data.session };
+    const result = await response.json();
+
+    if (!result.success) {
+      throw new Error(result.message || '注册失败');
+    }
+
+    // 返回注册结果，保持与原来的返回格式一致
+    return {
+      user: result.user,
+      session: null, // API注册后没有会话，需要邮箱验证
+      needsEmailConfirmation: result.needsEmailConfirmation
+    };
   } catch (error) {
     console.error('注册失败:', error);
     throw error;
